@@ -1,77 +1,72 @@
 import React, { useState } from "react"
 import { Share } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 
+import ConfigurationForm, { Coordinates } from "./configform"
 import Playground from "./playground"
 
-const ConfigurationForm = () => (
-  <form className="grid w-full items-start gap-6">
-    <fieldset className="grid gap-6 rounded-lg border p-4">
-      <legend className="-ml-1 px-1 text-sm font-medium">Settings</legend>
-      <div className="grid gap-3">
-        <Label htmlFor="model">Image</Label>
-        <Select>
-          <SelectTrigger id="model">
-            <SelectValue placeholder="Select an image" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="/image.jpg">Default</SelectItem>
-            <SelectItem value="/ultrawide.jpg">Ultrawide</SelectItem>
-            <SelectItem value="/image3">Image 3</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="grid gap-3">
-        <Label htmlFor="temperature">Temperature</Label>
-        <Input id="temperature" type="number" placeholder="0.4" />
-      </div>
-    </fieldset>
-    
-    <fieldset className="grid gap-6 rounded-lg border p-4">
-      <legend className="-ml-1 px-1 text-sm font-medium">Messages</legend>
-      <div className="grid gap-3">
-        <Label htmlFor="role">Role</Label>
-        <Select defaultValue="system">
-          <SelectTrigger>
-            <SelectValue placeholder="Select a role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="system">System</SelectItem>
-            <SelectItem value="user">User</SelectItem>
-            <SelectItem value="assistant">Assistant</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="grid gap-3">
-        <Label htmlFor="content">Content</Label>
-        <Textarea id="content" placeholder="You are a..." className="min-h-[9.5rem]" />
-      </div>
-    </fieldset>
-  </form>
-)
-
 export default function Home() {
-  const [image, setImage] = useState("/ultrawide.jpg")
+  const [image, setImage] = useState("/1920x1080.jpg")
+  const [bboxColor, setBboxColor] = useState("red")
+  const [showMinimap, setShowMinimap] = useState(true)
+  const [coordinates, setCoordinates] = useState<Coordinates>({
+    startX: 0,
+    startY: 0,
+    endX: 0,
+    endY: 0
+  });
+
+  const sendCoordinates = async () => {
+    const pixels = [
+      { x: coordinates.startX, y: coordinates.startY },  // Top-left
+      { x: coordinates.endX, y: coordinates.startY },    // Top-right
+      { x: coordinates.startX, y: coordinates.endY },    // Bottom-left
+      { x: coordinates.endX, y: coordinates.endY }       // Bottom-right
+    ];
+    try {
+      const response = await fetch('https://the-base-page-4392-c964a3ff-ejyxadcd.onporter.run/api/pixels-receiver/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pixels: pixels }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Response:", data);
+      } else {
+        throw new Error('Failed to send coordinates');
+      }
+    } catch (error) {
+      console.error('Error sending coordinates:', error);
+    }
+  };
+
   return (
-    <div className="w-2/3 mx-auto">
+    <div className="w-3/4 mx-auto">
       <div className="flex flex-col">
         <header className="sticky top-0 z-10 flex h-[57px] items-center gap-1 border-b bg-background px-4">
-          <h1 className="text-xl font-semibold">Playground</h1>
+          <h1 className="text-xl font-semibold">Image Viewer</h1>
           <Button variant="outline" size="sm" className="ml-auto gap-1.5 text-sm">
-            <Share className="size-3.5" />
-            Share
+            <Share className="size-3.5" /> Share
           </Button>
         </header>
         <main className="grid flex-1 gap-4 overflow-auto p-4 md:grid-cols-[1fr,2fr] lg:grid-cols-[1fr,3fr]">
           <div className="relative hidden flex-col items-start gap-8 md:flex">
-            <ConfigurationForm />
+            <ConfigurationForm 
+              image={image} 
+              setImage={setImage} 
+              showMinimap={showMinimap} 
+              setShowMinimap={setShowMinimap} 
+              bboxColor={bboxColor} 
+              setBboxColor={setBboxColor}
+              coordinates={coordinates}
+              sendCoordinates={sendCoordinates}
+            />
           </div>
-          <div className="relative flex h-full min-h-[55vh] flex-col rounded-sm bg-muted/50 p-1">
-            <Playground image={image} />
+          <div className="relative flex flex-col rounded-sm bg-muted/50 p-1">
+            <Playground image={image} bboxColor={bboxColor} showMinimap={showMinimap} setCoordinates={setCoordinates} />
           </div>
         </main>
       </div>
