@@ -7,7 +7,7 @@ import Playground from "./playground"
 
 export default function Home() {
   const [image, setImage] = useState("/1920x1080.jpg")
-  const [bboxColor, setBboxColor] = useState("red")
+  const [bboxColor, setBboxColor] = useState("green")
   const [showMinimap, setShowMinimap] = useState(true)
   const [coordinates, setCoordinates] = useState<Coordinates>({
     startX: 0,
